@@ -57,6 +57,7 @@ public class MemoryMapConfigMemoryItem implements Serializable, Comparable<Memor
      * 
      * @param name
      * @param origin 
+     * Used for the IAR Parser 
      */
    
     public MemoryMapConfigMemoryItem (String name, String origin){
@@ -125,7 +126,7 @@ public class MemoryMapConfigMemoryItem implements Serializable, Comparable<Memor
     }
     
     /**
-     * @return the endAddress of the segment
+     * @return the endAddress of the segment (IAR)
      */
     public String getEndAddress() {
         return endAddress;
@@ -133,7 +134,7 @@ public class MemoryMapConfigMemoryItem implements Serializable, Comparable<Memor
     
     /**
      * 
-     * @param endAddress of the segment
+     * @param endAddress of the segment (IAR)
      */
     public void setEndAddress(String endAddress) {        
         this.endAddress = endAddress;
