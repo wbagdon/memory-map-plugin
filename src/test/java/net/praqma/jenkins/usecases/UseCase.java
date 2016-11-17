@@ -14,6 +14,9 @@ import net.praqma.jenkins.memorymap.MemoryMapRecorder;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.lib.ObjectId;
 import static org.hamcrest.CoreMatchers.is;
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,7 +48,7 @@ public class UseCase {
         this.useCase = useCase;
     }
 
-    @Test
+@Test
     public void testUseCase() throws Exception {
         System.out.printf("%sUse case: %s%n", UseCaseCommits.PREFIX, useCase);
 
@@ -77,6 +80,39 @@ public class UseCase {
             commitNumber++;
         }
     }
+    
+    @Test
+    public void testUseCase_pipelines() throws Exception {
+        System.out.printf("%sUse case: %s%n", UseCaseCommits.PREFIX, useCase);
+
+        UseCaseCommits commits = new UseCaseCommits(useCase, useCaseRule.getRepository());
+        BranchManipulator manipulator = new BranchManipulator(commits);
+        
+        WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
+        job.setDefinition(new CpsFlowDefinition(String.format(
+                "node { git branch: 'arm-none-eabi-gcc_4.8.4_hello_world', url: 'https://github.com/Praqma/memory-map-examples',"
+                        + "MemoryMapRecorder(), "
+                        + "env BN=" + useCase + " sh run.sh"
+                        + "}"
+        ), true));
+        
+        File expectedResults = new File(useCaseRule.getUseCaseDir(useCase), "expectedResult.json");
+        String resultsJson = FileUtils.readFileToString(expectedResults);
+        BuildResultValidator validator = new BuildResultValidator();
+        validator.expect(resultsJson);
+        
+        ObjectId current;
+        int commitNumber = 1;
+        while ((current = manipulator.nextCommit()) != null) {
+            System.out.printf("%sCherry picked #%s %s%n", UseCaseCommits.PREFIX, commitNumber, current.getName());
+            WorkflowRun b = job.scheduleBuild2(0).get();
+            Assert.assertThat(b.getResult(), is(Result.SUCCESS));
+            System.out.printf("%sBuild %s finished with status %s using sha %s%n", UseCaseCommits.PREFIX, b.number, b.getResult(), current.getName());
+            validator.forBuild(b).validate();
+            commitNumber++;
+        }
+    }
+
 
     private MemoryMapRecorder getMemoryMapRecorder() throws JsonSyntaxException, IOException {
         File recorderConfigFile = new File(useCaseRule.getUseCaseDir(useCase), "graphConfiguration.json");
