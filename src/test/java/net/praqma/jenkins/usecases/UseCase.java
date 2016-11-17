@@ -92,7 +92,7 @@ public class UseCase {
         job.setDefinition(new CpsFlowDefinition(String.format(
                 "node { git branch: 'arm-none-eabi-gcc_4.8.4_hello_world', url: 'https://github.com/Praqma/memory-map-examples'"
                         + "MemoryMapRecorder([GccMemoryMapParser(configurationFile: 'viperlite.ld', graphConfiguration: [[graphCaption: 'Memory sections', graphDataList: '.data,.bss,.text'], [graphCaption: 'Target memory', graphDataList: 'rom,ram']], mapFile: 'blink.map', parserTitle: 'GCC memory map', parserUniqueName: 'Gcc')]) "
-                        + "env BN=" + useCase + " sh run.sh"
+                        + "sh 'env BN=" + useCase + " sh run.sh'"
                         + "}"
         ), true));
         
@@ -106,6 +106,9 @@ public class UseCase {
         while ((current = manipulator.nextCommit()) != null) {
             System.out.printf("%sCherry picked #%s %s%n", UseCaseCommits.PREFIX, commitNumber, current.getName());
             WorkflowRun b = job.scheduleBuild2(0).get();
+            System.out.println("++++++++++ LOG +++++++++++++++++");
+            System.out.println(b.getLog());
+            System.out.println("++++++++++++++++++++++++++++++++");
             Assert.assertThat(b.getResult(), is(Result.SUCCESS));
             System.out.printf("%sBuild %s finished with status %s using sha %s%n", UseCaseCommits.PREFIX, b.number, b.getResult(), current.getName());
             validator.forBuild(b).validate();
