@@ -91,8 +91,8 @@ public class UseCase {
         WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
         job.setDefinition(new CpsFlowDefinition(String.format(
                 "node { git branch: 'arm-none-eabi-gcc_4.8.4_hello_world', url: 'https://github.com/Praqma/memory-map-examples'"
-                        + "MemoryMapRecorder([GccMemoryMapParser(configurationFile: 'viperlite.ld', graphConfiguration: [[graphCaption: 'Memory sections', graphDataList: '.data,.bss,.text'], [graphCaption: 'Target memory', graphDataList: 'rom,ram']], mapFile: 'blink.map', parserTitle: 'GCC memory map', parserUniqueName: 'Gcc')]) "
                         + "sh 'env BN=" + useCase + " sh run.sh'"
+                        + "MemoryMapRecorder([GccMemoryMapParser(configurationFile: 'viperlite.ld', graphConfiguration: [[graphCaption: 'Memory sections', graphDataList: '.data,.bss,.text'], [graphCaption: 'Target memory', graphDataList: 'rom,ram']], mapFile: 'blink.map', parserTitle: 'GCC memory map', parserUniqueName: 'Gcc')]) "
                         + "}"
         ), true));
         
