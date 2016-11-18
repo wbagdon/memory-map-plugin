@@ -3,6 +3,7 @@ node {
     sh 'ls -al && pwd'
 
     sh '''
+export BN=arm-none-eabi-gcc_4.8.4_hello_world
 : ${BN:?"ERROR: run.sh requires env. var. BN to be set and not empty. It should be the example branch name checked out to run the example."}
 DKRIMG=$BN:latest
 [ "$(docker images | grep -c $BN)" -eq "0" ] && docker build --rm -f Dockerfile -t $DKRIMG .
