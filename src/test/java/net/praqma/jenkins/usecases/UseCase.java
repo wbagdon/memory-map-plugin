@@ -7,11 +7,14 @@ import hudson.model.FreeStyleProject;
 import hudson.model.Result;
 import hudson.tasks.Shell;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import net.praqma.jenkins.integration.TestUtils;
 import net.praqma.jenkins.memorymap.MemoryMapRecorder;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.eclipse.jgit.lib.ObjectId;
 import static org.hamcrest.CoreMatchers.is;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
@@ -87,16 +90,20 @@ public class UseCase {
 
         UseCaseCommits commits = new UseCaseCommits(useCase, useCaseRule.getRepository());
         BranchManipulator manipulator = new BranchManipulator(commits);
-        
+
+        InputStream fis = UseCase.class.getResourceAsStream("pipeScript.txt");
+        String s = IOUtils.toString(fis);
+                
         WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
-        CpsFlowDefinition flowDef = new CpsFlowDefinition(String.format(
+        CpsFlowDefinition flowDef = new CpsFlowDefinition(s, true);
+        /*CpsFlowDefinition flowDef = new CpsFlowDefinition(String.format(
                 "node {\n"
                         + "git branch: 'arm-none-eabi-gcc_4.8.4_hello_world', url: 'https://github.com/Praqma/memory-map-examples'\n"
                         + "sh 'ls -al && pwd'\n"
                         + "sh 'export BN=" + useCase + " && sh ./run.sh'\n"
                        // + "MemoryMapRecorder([GccMemoryMapParser(configurationFile: 'viperlite.ld', graphConfiguration: [[graphCaption: 'Memory sections', graphDataList: '.data,.bss,.text'], [graphCaption: 'Target memory', graphDataList: 'rom,ram']], mapFile: 'blink.map', parserTitle: 'GCC memory map', parserUniqueName: 'Gcc')])\n"
                         + "}"
-        ), true);
+        ), true);*/
         job.setDefinition(flowDef);
         
          WorkflowRun b = job.scheduleBuild2(0).get();
