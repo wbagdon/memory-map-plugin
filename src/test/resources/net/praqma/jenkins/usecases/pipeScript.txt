@@ -3,6 +3,7 @@ node {
     sh 'ls -al && pwd'
 
    def workspace = pwd()
+   sh 'echo ${workspace}'
    
     sh '''
 export BN=arm-none-eabi-gcc_4.8.4_hello_world
