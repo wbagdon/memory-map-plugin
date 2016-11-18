@@ -94,7 +94,7 @@ public class UseCase {
         String s = IOUtils.toString(fis);
                 
         WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
-        CpsFlowDefinition flowDef = new CpsFlowDefinition(s, true);
+        CpsFlowDefinition flowDef = new CpsFlowDefinition(s, false);
         /*CpsFlowDefinition flowDef = new CpsFlowDefinition(String.format(
                 "node {\n"
                         + "git branch: 'arm-none-eabi-gcc_4.8.4_hello_world', url: 'https://github.com/Praqma/memory-map-examples'\n"
