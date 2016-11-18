@@ -94,11 +94,18 @@ public class UseCase {
                         + "git branch: 'arm-none-eabi-gcc_4.8.4_hello_world', url: 'https://github.com/Praqma/memory-map-examples'\n"
                         + "sh 'ls -al && pwd'\n"
                         + "sh 'export BN=" + useCase + " && sh ./run.sh'\n"
-                        + "MemoryMapRecorder([GccMemoryMapParser(configurationFile: 'viperlite.ld', graphConfiguration: [[graphCaption: 'Memory sections', graphDataList: '.data,.bss,.text'], [graphCaption: 'Target memory', graphDataList: 'rom,ram']], mapFile: 'blink.map', parserTitle: 'GCC memory map', parserUniqueName: 'Gcc')])\n"
+                       // + "MemoryMapRecorder([GccMemoryMapParser(configurationFile: 'viperlite.ld', graphConfiguration: [[graphCaption: 'Memory sections', graphDataList: '.data,.bss,.text'], [graphCaption: 'Target memory', graphDataList: 'rom,ram']], mapFile: 'blink.map', parserTitle: 'GCC memory map', parserUniqueName: 'Gcc')])\n"
                         + "}"
         ), true);
         job.setDefinition(flowDef);
         
+         WorkflowRun b = job.scheduleBuild2(0).get();
+            System.out.println("++++++++++ LOG +++++++++++++++++");
+            System.out.println(b.getLog());
+            System.out.println("++++++++++++++++++++++++++++++++");
+            Assert.assertThat(b.getResult(), is(Result.SUCCESS));
+            
+            /*
         System.out.println("----------------flow def script ---------------");
         System.out.println(flowDef.getScript());
         System.out.println("-------------------------------------------------");
@@ -120,7 +127,7 @@ public class UseCase {
             System.out.printf("%sBuild %s finished with status %s using sha %s%n", UseCaseCommits.PREFIX, b.number, b.getResult(), current.getName());
             validator.forBuild(b).validate();
             commitNumber++;
-        }
+        }*/
     }
 
 
