@@ -93,7 +93,7 @@ public class UseCase {
                 "node {\n"
                         + "git branch: 'arm-none-eabi-gcc_4.8.4_hello_world', url: 'https://github.com/Praqma/memory-map-examples'\n"
                         + "sh 'ls -al && pwd'\n"
-                        + "sh 'export BN=" + useCase + " && sh run.sh'\n"
+                        + "sh 'export BN=" + useCase + " && sh ./run.sh'\n"
                         + "MemoryMapRecorder([GccMemoryMapParser(configurationFile: 'viperlite.ld', graphConfiguration: [[graphCaption: 'Memory sections', graphDataList: '.data,.bss,.text'], [graphCaption: 'Target memory', graphDataList: 'rom,ram']], mapFile: 'blink.map', parserTitle: 'GCC memory map', parserUniqueName: 'Gcc')])\n"
                         + "}"
         ), true));
