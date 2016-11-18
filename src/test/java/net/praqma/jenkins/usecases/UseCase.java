@@ -104,6 +104,10 @@ public class UseCase {
                         + "}"
         ), true);*/
         job.setDefinition(flowDef);
+       
+        System.out.println("----------------flow def script ---------------");
+        System.out.println(flowDef.getScript());
+        System.out.println("-------------------------------------------------");
         
          WorkflowRun b = job.scheduleBuild2(0).get();
             System.out.println("++++++++++ LOG +++++++++++++++++");
@@ -111,11 +115,8 @@ public class UseCase {
             System.out.println("++++++++++++++++++++++++++++++++");
             Assert.assertThat(b.getResult(), is(Result.SUCCESS));
             
-            /*
-        System.out.println("----------------flow def script ---------------");
-        System.out.println(flowDef.getScript());
-        System.out.println("-------------------------------------------------");
-        
+            
+        /*
         File expectedResults = new File(useCaseRule.getUseCaseDir(useCase), "expectedResult.json");
         String resultsJson = FileUtils.readFileToString(expectedResults);
         BuildResultValidator validator = new BuildResultValidator();
