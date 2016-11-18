@@ -89,14 +89,19 @@ public class UseCase {
         BranchManipulator manipulator = new BranchManipulator(commits);
         
         WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
-        job.setDefinition(new CpsFlowDefinition(String.format(
+        CpsFlowDefinition flowDef = new CpsFlowDefinition(String.format(
                 "node {\n"
                         + "git branch: 'arm-none-eabi-gcc_4.8.4_hello_world', url: 'https://github.com/Praqma/memory-map-examples'\n"
                         + "sh 'ls -al && pwd'\n"
                         + "sh 'export BN=" + useCase + " && sh ./run.sh'\n"
                         + "MemoryMapRecorder([GccMemoryMapParser(configurationFile: 'viperlite.ld', graphConfiguration: [[graphCaption: 'Memory sections', graphDataList: '.data,.bss,.text'], [graphCaption: 'Target memory', graphDataList: 'rom,ram']], mapFile: 'blink.map', parserTitle: 'GCC memory map', parserUniqueName: 'Gcc')])\n"
                         + "}"
-        ), true));
+        ), true);
+        job.setDefinition(flowDef);
+        
+        System.out.println("----------------flow def script ---------------");
+        System.out.println(flowDef.getScript());
+        System.out.println("-------------------------------------------------");
         
         File expectedResults = new File(useCaseRule.getUseCaseDir(useCase), "expectedResult.json");
         String resultsJson = FileUtils.readFileToString(expectedResults);
