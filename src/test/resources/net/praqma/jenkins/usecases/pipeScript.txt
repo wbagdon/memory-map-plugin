@@ -1,4 +1,4 @@
-node {
+node('dockerhost1') {
     git branch: 'arm-none-eabi-gcc_4.8.4_hello_world', url: 'https://github.com/Praqma/memory-map-examples'
     sh 'ls -al && pwd'
    
