@@ -14,6 +14,7 @@ import net.praqma.jenkins.integration.TestUtils;
 import net.praqma.jenkins.memorymap.MemoryMapRecorder;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.jgit.lib.ObjectId;
 import static org.hamcrest.CoreMatchers.is;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
@@ -81,6 +82,21 @@ public class UseCase {
             validator.forBuild(build).validate();
             commitNumber++;
         }
+    }
+    
+    @Test
+    public void testUseCase_pipelines_simple() throws Exception {
+         // job setup
+         WorkflowJob foo = jenkinsRule.jenkins.createProject(WorkflowJob.class, "foo");
+         foo.setDefinition(new CpsFlowDefinition(StringUtils.join(Arrays.asList(
+                 "node {",
+                 "  echo 'hi'",
+                 "}"), "\n"), true));
+ 
+         // get the build going, and wait until workflow pauses
+         WorkflowRun b = jenkinsRule.assertBuildStatusSuccess(foo.scheduleBuild2(0).get());
+ 
+         Assert.assertThat(b.getResult(), is(Result.SUCCESS));
     }
 
     @Test
