@@ -8,11 +8,19 @@ import hudson.model.Result;
 import hudson.tasks.Shell;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import net.praqma.jenkins.integration.TestUtils;
 import net.praqma.jenkins.memorymap.MemoryMapRecorder;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.jgit.lib.ObjectId;
+import static org.hamcrest.CoreMatchers.is;
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,7 +59,7 @@ public class UseCase {
         BranchManipulator manipulator = new BranchManipulator(commits);
 
         //Configuration of the jenkins job
-        FreeStyleProject project = TestUtils.createProject(jenkinsRule);
+        FreeStyleProject project = TestUtils.createProject(jenkinsRule, false);
         project = TestUtils.configureGit(project, manipulator.getUseCase().getDeliverBranch(), manipulator.getUseCase().getFileRemoteName());
         project.getPublishersList().add(getMemoryMapRecorder());
         project.getBuildersList().add(new Shell("env BN=" + useCase + " sh run.sh"));
@@ -63,22 +71,89 @@ public class UseCase {
         BuildResultValidator validator = new BuildResultValidator();
         validator.expect(resultsJson);
 
-        //Cherry pick a sha and transplant a commmit
+        //Cherry pick a sha and transplant a commit
         ObjectId current;
         int commitNumber = 1;
         while ((current = manipulator.nextCommit()) != null) {
             System.out.printf("%sCherry picked #%s %s%n", UseCaseCommits.PREFIX, commitNumber, current.getName());
             AbstractBuild<?, ?> build = project.scheduleBuild2(0, new Cause.UserIdCause()).get();
-            assert build.getResult() == Result.SUCCESS;
+            Assert.assertThat(build.getResult(), is(Result.SUCCESS));
             System.out.printf("%sBuild %s finished with status %s using sha %s%n", UseCaseCommits.PREFIX, build.number, build.getResult(), current.getName());
             validator.forBuild(build).validate();
             commitNumber++;
         }
     }
+    
+    @Test
+    public void testUseCase_pipelines_simple() throws Exception {
+         // job setup
+         WorkflowJob foo = jenkinsRule.jenkins.createProject(WorkflowJob.class, "foo");
+         foo.setDefinition(new CpsFlowDefinition(StringUtils.join(Arrays.asList(
+                 "node {",
+                 "  echo 'hi'",
+                 "}"), "\n"), true));
+ 
+         // get the build going, and wait until workflow pauses
+         WorkflowRun b = jenkinsRule.assertBuildStatusSuccess(foo.scheduleBuild2(0).get());
+ 
+         Assert.assertThat(b.getResult(), is(Result.SUCCESS));
+    }
+
+    @Test
+    public void testUseCase_pipelines() throws Exception {
+        System.out.printf("%sUse case: %s%n", UseCaseCommits.PREFIX, useCase);
+
+        UseCaseCommits commits = new UseCaseCommits(useCase, useCaseRule.getRepository());
+        BranchManipulator manipulator = new BranchManipulator(commits);
+
+        InputStream fis = UseCase.class.getResourceAsStream("pipeScript.txt");
+        String s = IOUtils.toString(fis);
+
+        WorkflowJob job = jenkinsRule.jenkins.createProject(WorkflowJob.class, "p");
+        CpsFlowDefinition flowDef = new CpsFlowDefinition(s, false);
+        job.setDefinition(flowDef);
+        /*CpsFlowDefinition flowDef = new CpsFlowDefinition(String.format(
+         "node {\n"
+         + "git branch: 'arm-none-eabi-gcc_4.8.4_hello_world', url: 'https://github.com/Praqma/memory-map-examples'\n"
+         + "sh 'ls -al && pwd'\n"
+         + "sh 'export BN=" + useCase + " && sh ./run.sh'\n"
+         // + "MemoryMapRecorder([GccMemoryMapParser(configurationFile: 'viperlite.ld', graphConfiguration: [[graphCaption: 'Memory sections', graphDataList: '.data,.bss,.text'], [graphCaption: 'Target memory', graphDataList: 'rom,ram']], mapFile: 'blink.map', parserTitle: 'GCC memory map', parserUniqueName: 'Gcc')])\n"
+         + "}"
+         ), true);*/
+
+        System.out.println("----------------flow def script ---------------");
+        System.out.println(flowDef.getScript());
+        System.out.println("-------------------------------------------------");
+
+        WorkflowRun b = job.scheduleBuild2(0).get();
+        System.out.println("++++++++++ LOG +++++++++++++++++");
+        System.out.println(b.getLog());
+        System.out.println("++++++++++++++++++++++++++++++++");
+        Assert.assertThat(b.getResult(), is(Result.SUCCESS));
+
+        /*
+         File expectedResults = new File(useCaseRule.getUseCaseDir(useCase), "expectedResult.json");
+         String resultsJson = FileUtils.readFileToString(expectedResults);
+         BuildResultValidator validator = new BuildResultValidator();
+         validator.expect(resultsJson);
+            
+         ObjectId current;
+         int commitNumber = 1;
+         while ((current = manipulator.nextCommit()) != null) {
+         System.out.printf("%sCherry picked #%s %s%n", UseCaseCommits.PREFIX, commitNumber, current.getName());
+         WorkflowRun b = job.scheduleBuild2(0).get();
+         System.out.println("++++++++++ LOG +++++++++++++++++");
+         System.out.println(b.getLog());
+         System.out.println("++++++++++++++++++++++++++++++++");
+         Assert.assertThat(b.getResult(), is(Result.SUCCESS));
+         System.out.printf("%sBuild %s finished with status %s using sha %s%n", UseCaseCommits.PREFIX, b.number, b.getResult(), current.getName());
+         validator.forBuild(b).validate();
+         commitNumber++;
+         }*/
+    }
 
     private MemoryMapRecorder getMemoryMapRecorder() throws JsonSyntaxException, IOException {
         File recorderConfigFile = new File(useCaseRule.getUseCaseDir(useCase), "graphConfiguration.json");
-        MemoryMapRecorder recorder = JsonParser.jackson.readValue(recorderConfigFile, MemoryMapRecorder.class);
-        return recorder;
+        return JsonParser.jackson.readValue(recorderConfigFile, MemoryMapRecorder.class);
     }
 }

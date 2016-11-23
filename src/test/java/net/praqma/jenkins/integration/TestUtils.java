@@ -52,6 +52,7 @@ import net.praqma.jenkins.memorymap.parser.AbstractMemoryMapParser;
 import net.praqma.jenkins.memorymap.result.MemoryMapConfigMemoryItem;
 import net.praqma.jenkins.memorymap.util.HexUtils;
 import org.apache.commons.io.FileUtils;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -103,21 +104,33 @@ public class TestUtils {
      * @return a new project
      */
     public static FreeStyleProject createProject(JenkinsRule jenkins) throws Exception {
+        return createProject(jenkins, true);
+    }
+
+    /**
+     * Creates a new project to test with.
+     *
+     * @param jenkins a JenkinsRule instance used to create the project.
+     * @return a new project
+     */
+    public static FreeStyleProject createProject(JenkinsRule jenkins, boolean useSlave) throws Exception {
         FreeStyleProject project = jenkins.createFreeStyleProject(UUID.randomUUID().toString());
-        project.setAssignedNode(jenkins.createOnlineSlave());
+        if(useSlave) {
+            project.setAssignedNode(jenkins.createOnlineSlave());
+        }
         return project;
     }
-    
-    public static FreeStyleProject configureGit(FreeStyleProject project, String branchName, String repository) throws IOException {        
-        List<UserRemoteConfig> repos = Arrays.asList(new UserRemoteConfig(repository, null, null, null));        
+
+    public static FreeStyleProject configureGit(FreeStyleProject project, String branchName, String repository) throws IOException {
+        List<UserRemoteConfig> repos = Collections.singletonList(new UserRemoteConfig(repository, null, null, null));
         GitSCM gitSCM = new GitSCM(repos,
                 Collections.singletonList(new BranchSpec(branchName)),
                 false, Collections.<SubmoduleConfig>emptyList(),
-                null, null, Collections.EMPTY_LIST);        
+                null, null, Collections.EMPTY_LIST);
         project.setScm(gitSCM);
-        
+
         return project;
-    } 
+    }
 
     /**
      * Runs a build and asserts all the given usage values.
@@ -163,7 +176,7 @@ public class TestUtils {
      * @param parser the parser whose configuration must be added
      */
     public static void setMemoryMapConfiguration(FreeStyleProject project, AbstractMemoryMapParser parser) {
-        MemoryMapRecorder recorder = new MemoryMapRecorder(Arrays.asList((AbstractMemoryMapParser) parser));
+        MemoryMapRecorder recorder = new MemoryMapRecorder(Collections.singletonList(parser));
         project.getPublishersList().clear(); //remove any old recorders
         project.getPublishersList().add(recorder);
     }
@@ -283,7 +296,7 @@ public class TestUtils {
         };
         return new GsonXmlBuilder().setXmlParserCreator(parserCreator).create();
     }
-    
+
     public static boolean printAndReturnConsoleOfBuild(Run<?,?> build, JenkinsRule jenkinsRule) throws IOException, SAXException {
         // this outputs loft of HTML garbage... so pretty printing after:
         String console = jenkinsRule.createWebClient().getPage(build, "console").asXml();
@@ -308,7 +321,7 @@ public class TestUtils {
             System.out.format("Writing full log to trace%n");
             System.out.format("************************************************************************%n");
             System.out.format(console+"%n");
-            System.out.format("************************************************************************%n");           
+            System.out.format("************************************************************************%n");
             return false;
         }
     }

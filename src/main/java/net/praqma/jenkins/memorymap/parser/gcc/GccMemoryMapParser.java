@@ -64,7 +64,7 @@ public class GccMemoryMapParser extends AbstractMemoryMapParser implements Seria
      *
      * @param seq The content of the map file
      * @return a list of the defined MEMORY in the map file
-     * @throws hudson.AbortException          
+     * @throws hudson.AbortException when a illegal value of memory found
      *
      */
     public MemoryMapConfigMemory getMemory(CharSequence seq) throws AbortException {
@@ -91,8 +91,8 @@ public class GccMemoryMapParser extends AbstractMemoryMapParser implements Seria
      * secname start BLOCK(align) (NOLOAD) : AT ( ldadr )
      { contents } >region =fill
      ...
-     }   
-     * 
+     }
+     *
      */
     public List<MemoryMapConfigMemoryItem> getSections(CharSequence m) {
         List<MemoryMapConfigMemoryItem> items = new ArrayList<>();
@@ -121,26 +121,23 @@ public class GccMemoryMapParser extends AbstractMemoryMapParser implements Seria
     }
 
     public Pattern getLinePatternForMapFile(String sectionName) {
-        Pattern p = Pattern.compile(String.format("^(%s)(\\s+)(\\w+)(\\s+)(\\w+)(\\w*)", sectionName), Pattern.MULTILINE);
-        return p;
+        return Pattern.compile(String.format("^(%s)(\\s+)(\\w+)(\\s+)(\\w+)(\\w*)", sectionName), Pattern.MULTILINE);
     }
 
-    public class MemoryMapMemItemComparator implements Comparator<MemoryMapConfigMemoryItem> {
-
+    private static class MemoryMapMemItemComparator implements Comparator<MemoryMapConfigMemoryItem>, Serializable {
         @Override
         public int compare(MemoryMapConfigMemoryItem t, MemoryMapConfigMemoryItem t1) {
             long vt = new HexifiableString(t.getOrigin()).getLongValue();
             long vt1 = new HexifiableString(t1.getOrigin()).getLongValue();
             return (vt < vt1 ? -1 : (vt == vt1 ? 1 : 0));
         }
-
     }
 
     /**
      * Given an item with length == null. Look down in the list. If we find an
-     * item whoose length is not null, set the items length to that
+     * item whose length is not null, set the items length to that
      *
-     * @param memory
+     * @param memory the memory list
      * @return a more complete configuration, where i have better values
      */
     public MemoryMapConfigMemory guessLengthOfSections(MemoryMapConfigMemory memory) {
@@ -184,19 +181,19 @@ public class GccMemoryMapParser extends AbstractMemoryMapParser implements Seria
         //The memory are the top level components, sections belong to one of these sections
         CharSequence stripped = stripComments(createCharSequenceFromFile(f));
 
-        MemoryMapConfigMemory memconfig = getMemory(stripped);
-        memconfig.addAll(getSections(stripped));
+        MemoryMapConfigMemory memConfig = getMemory(stripped);
+        memConfig.addAll(getSections(stripped));
         for (MemoryMapGraphConfiguration g : getGraphConfiguration()) {
             for (String gItem : g.itemizeGraphDataList()) {
                 for (String gSplitItem : gItem.split("\\+")) {
                     //We will fail if the name of the data section does not match any of the named items in the map file.
-                    if (!memconfig.containsSectionWithName(gSplitItem)) {
-                        throw new MemoryMapMemorySelectionError(String.format("The memory section named %s not found in map file%nAvailable sections are:%n%s", gSplitItem, memconfig.getItemNames()));
+                    if (!memConfig.containsSectionWithName(gSplitItem)) {
+                        throw new MemoryMapMemorySelectionError(String.format("The memory section named %s not found in map file%nAvailable sections are:%n%s", gSplitItem, memConfig.getItemNames()));
                     }
                 }
             }
         }
-        return memconfig;
+        return memConfig;
     }
 
     @Override
